@@ -7,14 +7,15 @@ resource "random_string" "default" {
 locals {
   bucket_name = "${random_string.default.result}"
   functionrandomextension = "${random_string.default.result}"
+  apigatewayextension = "${random_string.default.result}"
   lambda_content = "lambda.zip"
   dynamotable="items"
 } 
  provider "aws" {
   version = "~> 2.0"
   region  = "us-east-1"
-  access_key = "AKIAIED2T2PHG6FI33HA"
-  secret_key = "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"
+  access_key = "AKIAJQVHTHUEM6WOP6HA"
+  secret_key = "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"
 }
 
 resource "aws_s3_bucket" "b" {
@@ -83,58 +84,47 @@ resource "aws_lambda_function" "getbyidfunction" {
  }
 
 
-resource "aws_lambda_function" "putitemfunction" {
-   function_name = "putitem-${local.functionrandomextension}"
-
-   # The bucket name as created earlier with "aws s3api create-bucket"
-   s3_bucket = local.bucket_name
-   s3_key    = local.lambda_content
-
-   # "main" is the filename within the zip file (main.js) and "handler"
-   # is the name of the property under which the handler function was
-   # exported in that file.
-   handler = "src/handlers/put-item.putItemHandler"
-   runtime = "nodejs10.x"
-
-   role = aws_iam_role.lambda_exec.arn
-   depends_on = [
-   "aws_s3_bucket_object.object"
-  ]
- }
- 
-resource "aws_lambda_function" "getallitemsfunction" {
-   function_name = "putgetallitems-${local.functionrandomextension}"
-
-   # The bucket name as created earlier with "aws s3api create-bucket"
-   s3_bucket = local.bucket_name
-   s3_key    = local.lambda_content
-
-   # "main" is the filename within the zip file (main.js) and "handler"
-   # is the name of the property under which the handler function was
-   # exported in that file.
-   handler = "src/handlers/get-all-items.getAllItemsHandler"
-   runtime = "nodejs10.x"
-
-   role = aws_iam_role.lambda_exec.arn
-   depends_on = [
-   "aws_s3_bucket_object.object"
-  ]
- }
- resource "aws_dynamodb_table" "dynamotable" {
-  name             = local.dynamotable
-  hash_key         = "Id"
-  billing_mode     = "PAY_PER_REQUEST"
- 
-  attribute {
-    name = "Id"
-    type = "S"
-  }
-  attribute {
-    name = "Value"
-    type = "S"
-  }
-
+resource "aws_api_gateway_rest_api" "example" {
+  name        = "ServerlessExample"
+  description = "Terraform Serverless Application Example"
 }
+ resource "aws_api_gateway_resource" "proxy" {
+   rest_api_id = aws_api_gateway_rest_api.example.id
+   parent_id   = aws_api_gateway_rest_api.example.root_resource_id
+   path_part   = "awslab"
+}
+
+resource "aws_api_gateway_method" "proxy" {
+   rest_api_id   = aws_api_gateway_rest_api.example.id
+   resource_id   = aws_api_gateway_resource.proxy.id
+   http_method   = "ANY"
+   authorization = "NONE"
+ }
+ resource "aws_api_gateway_integration" "lambda" {
+   rest_api_id = aws_api_gateway_rest_api.example.id
+   resource_id = aws_api_gateway_method.proxy.resource_id
+   http_method = aws_api_gateway_method.proxy.http_method
+
+   integration_http_method = "GET"
+   type                    = "AWS_PROXY"
+   uri                     = aws_lambda_function.getbyidfunction.invoke_arn
+ }
+  resource "aws_api_gateway_method" "proxy_root" {
+   rest_api_id   = aws_api_gateway_rest_api.example.id
+   resource_id   = aws_api_gateway_rest_api.example.root_resource_id
+   http_method   = "GET"
+   authorization = "NONE"
+ }
+
+ resource "aws_api_gateway_integration" "lambda_root" {
+   rest_api_id = aws_api_gateway_rest_api.example.id
+   resource_id = aws_api_gateway_method.proxy_root.resource_id
+   http_method = aws_api_gateway_method.proxy_root.http_method
+
+   integration_http_method = "GET"
+   type                    = "AWS_PROXY"
+   uri                     = aws_lambda_function.getbyidfunction.invoke_arn
+ }
 
  output "bucket_name" {
   value = local.bucket_name
