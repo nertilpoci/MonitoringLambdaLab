@@ -15,9 +15,9 @@ locals {
 //configure
  provider "aws" {
   version = "~> 2.0"
-  region  = "us-east-1"
-  access_key = "AKIAJQVHTHUEM6WOP6HA"
-  secret_key = "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"
+  region  = "us-west-2"
+  access_key = ""
+  secret_key = ""
 }
 
 //create s3 bucket
@@ -101,7 +101,7 @@ resource "aws_lambda_function" "putitemfunction" {
  }
  
 resource "aws_lambda_function" "getallitemsfunction" {
-   function_name = "putgetallitems-${local.functionrandomextension}"
+   function_name = "getallitems-${local.functionrandomextension}"
 
    s3_bucket = local.bucket_name
    s3_key    = local.lambda_content
