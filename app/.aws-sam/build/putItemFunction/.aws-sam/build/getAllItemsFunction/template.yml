@@ -1,0 +1,66 @@
+# This is the SAM template that represents the architecture of your serverless application
+# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
+
+# The AWSTemplateFormatVersion identifies the capabilities of the template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  monitoringlambdaapplications
+
+# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
+Transform:
+- AWS::Serverless-2016-10-31
+
+# Resources declares the AWS resources that you want to include in the stack
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
+Resources:
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  getAllItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: src/handlers/get-all-items.getAllItemsHandler
+      Runtime: nodejs10.x
+      MemorySize: 128
+      Timeout: 60
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TABLE_NAME: !Ref SampleTable
+
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # This is a Lambda function config associated with the source code: get-by-id.js
+  getByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: src/handlers/get-by-id.getByIdHandler
+      Runtime: nodejs10.x
+      MemorySize: 128
+      Timeout: 60
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TABLE_NAME: !Ref SampleTable
+
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # This is a Lambda function config associated with the source code: put-item.js
+  putItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: src/handlers/put-item.putItemHandler
+      Runtime: nodejs10.x
+      MemorySize: 128
+      Timeout: 60
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TABLE_NAME: !Ref SampleTable

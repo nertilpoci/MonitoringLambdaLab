@@ -9,15 +9,15 @@ locals {
   functionrandomextension = "${random_string.default.result}"
   apigatewayextension = "${random_string.default.result}"
   lambda_content = "lambda.zip"
-  dynamotable="items"
+  dynamotable=  "items"
 } 
 
 //configure
  provider "aws" {
   version = "~> 2.0"
   region  = "us-west-2"
-  access_key = ""
-  secret_key = ""
+  access_key = "AKIAQN7RRVUF6VLVAPUR"
+  secret_key = "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"
 }
 
 //create s3 bucket
@@ -77,7 +77,7 @@ resource "aws_lambda_function" "getbyidfunction" {
   ]
    environment {
     variables = {
-      SAMPLE_TABLE = local.dynamotable
+      TABLE_NAME = local.dynamotable
     }
   }
  }
@@ -95,7 +95,7 @@ resource "aws_lambda_function" "putitemfunction" {
   ]
    environment {
     variables = {
-      SAMPLE_TABLE = local.dynamotable
+      TABLE_NAME = local.dynamotable
     }
   }
  }
@@ -114,7 +114,7 @@ resource "aws_lambda_function" "getallitemsfunction" {
   ]
    environment {
     variables = {
-      SAMPLE_TABLE = local.dynamotable
+      TABLE_NAME = local.dynamotable
     }
   }
  }
@@ -301,7 +301,56 @@ resource "aws_api_gateway_integration" "getbyideintegration" {
   uri                     = "${aws_lambda_function.getbyidfunction.invoke_arn}"
 }
 
+resource "aws_api_gateway_deployment" "lab" {
+   depends_on = [
+     aws_api_gateway_integration.getbyideintegration,
+     aws_api_gateway_integration.putitemintegration,
+     aws_api_gateway_integration.getallitemsintegration
+   ]
 
+   rest_api_id = "${aws_api_gateway_rest_api.api.id}"
+   stage_name  = "lab"
+ }
+
+#  lambda function to call api periodically for generationg logs
+
+#  resource "aws_lambda_function" "apitrigger" {
+#    function_name = "apitrigger-${local.functionrandomextension}"
+#    s3_bucket = local.bucket_name
+#    s3_key    = local.lambda_content
+#    handler = "src/handlers/api-trigger.apiTriggerHandler"
+#    runtime = "nodejs10.x"
+
+#    role = aws_iam_role.lambda_exec.arn
+#    depends_on = [
+#    "aws_s3_bucket_object.object"
+#   ]
+#    environment {
+#     variables = {
+#       API_ENDPOINT = "${aws_api_gateway_deployment.lab.invoke_url}"
+#     }
+#   }
+#  }
+
+# resource "aws_cloudwatch_event_rule" "every_one_minute" {
+#   name                = "every-one-minute"
+#   description         = "Fires every one minutes"
+#   schedule_expression = "rate(1 minute)"
+# }
+
+# resource "aws_cloudwatch_event_target" "check_foo_every_one_minute" {
+#   rule      = "${aws_cloudwatch_event_rule.every_one_minute.name}"
+#   target_id = "lambda"
+#   arn       = "${aws_lambda_function.apitrigger.arn}"
+# }
+
+# resource "aws_lambda_permission" "allow_cloudwatch_to_call_check_foo" {
+#   statement_id  = "AllowExecutionFromCloudWatch"
+#   action        = "lambda:InvokeFunction"
+#   function_name = "${aws_lambda_function.apitrigger.function_name}"
+#   principal     = "events.amazonaws.com"
+#   source_arn    = "${aws_cloudwatch_event_rule.every_one_minute.arn}"
+# }
  output "bucket_name" {
   value = local.bucket_name
 }

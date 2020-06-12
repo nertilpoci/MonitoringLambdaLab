@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: monitoringlambdaapplications
+Transform:
+- AWS::Serverless-2016-10-31
+Resources:
+  getAllItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: getAllItemsFunction
+      Handler: src/handlers/get-all-items.getAllItemsHandler
+      Runtime: nodejs10.x
+      MemorySize: 128
+      Timeout: 60
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: SampleTable
+  getByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: getByIdFunction
+      Handler: src/handlers/get-by-id.getByIdHandler
+      Runtime: nodejs10.x
+      MemorySize: 128
+      Timeout: 60
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: SampleTable
+  putItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: putItemFunction
+      Handler: src/handlers/put-item.putItemHandler
+      Runtime: nodejs10.x
+      MemorySize: 128
+      Timeout: 60
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: SampleTable
