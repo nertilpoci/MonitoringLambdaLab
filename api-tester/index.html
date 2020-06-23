@@ -195,8 +195,6 @@
 <script type="text/javascript">
     var autoGenerateInterval = null;
 
-    let url = "https://83xuod49w3.execute-api.us-west-2.amazonaws.com/lab/awslab"
-    // let url = "{api_url}";
     let config = {
 
     }
@@ -228,12 +226,28 @@
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+function getUrl(){
+    var url= localStorage.getItem('api_url')
+    if(!url) {
+        alert('API url not set')
+        return null
+    }
+    return url;
+}
     window.onload = function () {
+        document.getElementById('api-url-display').innerHTML=localStorage.getItem('api_url')||'';
+        document.getElementById('set-api-url').addEventListener("click", function () {
+            var url = document.getElementById('api-url-input').value
+            if (!url) return alert('Plese specify a url');
+            localStorage.setItem('api_url',url);
+            document.getElementById('api-url-display').innerHTML=url
+
+        });
+
         document.getElementById('get-by-id').addEventListener("click", function () {
             var id = document.getElementById('getbyid-id').value
             if (!id) return alert('Plese specify an id');
-            axios.get(`${url}/${id}`, config).then(result => {
-                console.log('result', result)
+            axios.get(`${getUrl()}/${id}`, config).then(result => {
                 setOutput(result.data)
             }).catch(err => {
                 setOutput(err)
@@ -241,8 +255,7 @@
         });
         document.getElementById('get-all').addEventListener("click", function () {
 
-            axios.get(`${url}`, config).then(result => {
-                console.log('result', result)
+            axios.get(`${getUrl()}`, config).then(result => {
                 setOutput(result.data)
             }).catch(err => {
                 setOutput(err)
@@ -252,7 +265,7 @@
             e.preventDefault();
             var id = document.getElementById('item-id').value;
             var name = document.getElementById('item-name').value;
-            axios.post(`${url}`, { "id": id, "name": name },{headers:{"Content-Type":"application/json"}}).then(result => {
+            axios.post(`${getUrl()}`, { "id": id, "name": name },{headers:{"Content-Type":"application/json"}}).then(result => {
                 setOutput(result.data)
             }).catch(err => {
                 setOutput(err)
@@ -268,7 +281,7 @@
            else{
             autogenenrateButton.innerHTML="Stop autogenerating data"
             autoGenerateInterval = setInterval(()=>{
-                axios.post(`${url}`, { "id": getRandomInt(1,9999999999).toString(), "name": Math.random().toString(36).substring(7) }).then(result => {
+                axios.post(`${getUrl()}`, { "id": getRandomInt(1,9999999999).toString(), "name": Math.random().toString(36).substring(7) }).then(result => {
                 setOutput(result.data)
             }).catch(err => {
                 setOutput(err)
@@ -296,8 +309,21 @@
                 </div>
 
                 <div class="inner cover">
+                    <label>API URL: <span id="api-url-display"></span></label>
+                            <div class="input-group mb-3">
+                                <input id="api-url-input" type="text" class="form-control" placeholder="Enter URL"
+                                    aria-describedby="basic-addon2">
+                                <div class="input-group-append">
+                                    <button id="set-api-url" class="btn btn-outline-secondary" type="button">Update</button>
+                                  
+                                </div>
+                            </div>
+                            
+                            <br>
+                            <hr>
                     <div class="row">
                         <div class="col-6">
+                            
                             <label>GET</label>
                             <div class="input-group mb-3">
                                 <input id="getbyid-id" type="text" class="form-control" placeholder="Enter Id"
