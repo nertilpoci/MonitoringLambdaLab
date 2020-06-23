@@ -16,8 +16,8 @@ locals {
  provider "aws" {
   version = "~> 2.0"
   region  = "us-west-2"
-access_key = "AKIA5NKG5NAPIYQE7T3J"
-  secret_key = "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"
+access_key = "AKIA27GIHZ2UPIJ6ZB5U"
+  secret_key = "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"
 }
 
 //create s3 bucket
@@ -311,80 +311,14 @@ resource "aws_api_gateway_method_response" "getallmethod_response_200" {
     }
     depends_on = ["aws_api_gateway_method.getallmethod"]
 }
-resource "aws_api_gateway_method_response" "putitemmethod_response_200" {
-    rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
-    resource_id   = "${aws_api_gateway_resource.mainapiresource.id}"
-    http_method   = "${aws_api_gateway_method.putitemmethod.http_method}"
-    status_code   = "200"
-     response_parameters ={
-        "method.response.header.Access-Control-Allow-Headers" = true,
-        "method.response.header.Access-Control-Allow-Methods" = true,
-        "method.response.header.Access-Control-Allow-Origin" = true
-    }
-    
-    depends_on = ["aws_api_gateway_method.putitemmethod"]
-}
-resource "aws_api_gateway_integration_response" "putitem_integration_response" {
-    rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
-    resource_id   = "${aws_api_gateway_resource.mainapiresource.id}"
-    http_method   = "${aws_api_gateway_method.putitemmethod.http_method}"
-    status_code   = "${aws_api_gateway_method_response.putitemmethod_response_200.status_code}"
-    response_parameters = {
-        "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-        "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST,PUT'",
-        "method.response.header.Access-Control-Allow-Origin" = "'*'"
-    }
-    depends_on = ["aws_api_gateway_method_response.putitemmethod_response_200"]
-}
-//options
 
-resource "aws_api_gateway_method" "options_method" {
-    rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
-    resource_id   = "${aws_api_gateway_resource.mainapiresource.id}"
-    http_method   = "OPTIONS"
-    authorization = "NONE"
-}
-resource "aws_api_gateway_method_response" "options_200" {
-   rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
-    resource_id   = "${aws_api_gateway_resource.mainapiresource.id}"
-    http_method   = "${aws_api_gateway_method.options_method.http_method}"
-    status_code   = "200"
-    response_models ={
-        "application/json" = "Empty"
-    }
-    response_parameters ={
-        "method.response.header.Access-Control-Allow-Headers" = true,
-        "method.response.header.Access-Control-Allow-Methods" = true,
-        "method.response.header.Access-Control-Allow-Origin" = true
-    }
-    depends_on = ["aws_api_gateway_method.options_method"]
-}
-resource "aws_api_gateway_integration" "options_integration" {
-    rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
-    resource_id   = "${aws_api_gateway_resource.mainapiresource.id}"
-    http_method   = "${aws_api_gateway_method.options_method.http_method}"
-    type          = "MOCK"
-    depends_on = ["aws_api_gateway_method.options_method"]
-}
-resource "aws_api_gateway_integration_response" "options_integration_response" {
-    rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
-    resource_id   = "${aws_api_gateway_resource.mainapiresource.id}"
-    http_method   = "${aws_api_gateway_method.options_method.http_method}"
-    status_code   = "${aws_api_gateway_method_response.options_200.status_code}"
-    response_parameters = {
-        "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-        "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST,PUT'",
-        "method.response.header.Access-Control-Allow-Origin" = "'*'"
-    }
-    depends_on = ["aws_api_gateway_method_response.options_200"]
-}
-//--options
+
+
 resource "aws_api_gateway_deployment" "lab" {
    depends_on = [
      aws_api_gateway_integration.getbyideintegration,
      aws_api_gateway_integration.getallitemsintegration,
-     aws_api_gateway_integration_response.options_integration_response
-     aws_api_gateway_integration_response.options_integration_response
+     aws_api_gateway_integration.putitemintegration
      
    ]
 
