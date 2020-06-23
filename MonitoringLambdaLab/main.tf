@@ -6,6 +6,7 @@ resource "random_string" "default" {
 }
 locals {
   bucket_name = "${random_string.default.result}"
+  website_bucket_name = "website-${random_string.default.result}"
   functionrandomextension = "${random_string.default.result}"
   apigatewayextension = "${random_string.default.result}"
   lambda_content = "lambda.zip"
@@ -16,7 +17,6 @@ locals {
  provider "aws" {
   version = "~> 2.0"
   region  = "us-west-2"
-
 }
 
 //create s3 bucket
@@ -240,6 +240,14 @@ resource "aws_api_gateway_resource" "mainapiresource" {
   parent_id   = "${aws_api_gateway_rest_api.api.root_resource_id}"
   rest_api_id = "${aws_api_gateway_rest_api.api.id}"
 }
+module "cors" {
+  source = "squidfunk/api-gateway-enable-cors/aws"
+  version = "0.3.1"
+
+  api_id          = "${aws_api_gateway_rest_api.api.id}"
+  api_resource_id = "${aws_api_gateway_resource.mainapiresource.id}"
+}
+
 //get all items
 //getall items method
 resource "aws_api_gateway_method" "getallmethod" {
@@ -248,6 +256,7 @@ resource "aws_api_gateway_method" "getallmethod" {
   http_method   = "GET"
   authorization = "NONE"
 }
+
 //getallitems integration
 resource "aws_api_gateway_integration" "getallitemsintegration" {
   rest_api_id             = "${aws_api_gateway_rest_api.api.id}"
@@ -299,17 +308,75 @@ resource "aws_api_gateway_integration" "getbyideintegration" {
   type                    = "AWS_PROXY"
   uri                     = "${aws_lambda_function.getbyidfunction.invoke_arn}"
 }
-
+#Deploy api
 resource "aws_api_gateway_deployment" "lab" {
    depends_on = [
      aws_api_gateway_integration.getbyideintegration,
-     aws_api_gateway_integration.putitemintegration,
-     aws_api_gateway_integration.getallitemsintegration
+     aws_api_gateway_integration.getallitemsintegration,
+     aws_api_gateway_integration.putitemintegration
+     
    ]
 
    rest_api_id = "${aws_api_gateway_rest_api.api.id}"
    stage_name  = "lab"
  }
+# AWS S3 bucket for static hosting
+# website_bucket_name
+
+#change api url in index.html
+
+resource "local_file" "index" {
+    content     = "${replace(file("${path.module}/api-tester/index.html"), "{api_url}", "${aws_api_gateway_deployment.lab.invoke_url}")}"
+    filename = "${path.module}/api-tester/main.html"
+    depends_on = [ "aws_api_gateway_deployment.lab"]
+}
+
+
+data "aws_iam_policy_document" "bucket_policy" {
+  statement {
+    sid = "AllowReadFromAll"
+
+    actions = [
+      "s3:GetObject",
+    ]
+
+    resources = [
+      "arn:aws:s3:::${local.website_bucket_name}/*",
+    ]
+
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+  }
+}
+resource "aws_s3_bucket" "website" {
+  bucket = local.website_bucket_name
+  acl    = "public-read"
+   policy = data.aws_iam_policy_document.bucket_policy.json
+
+
+  website {
+    index_document = "index.html"
+    error_document = "error.html"
+
+  }
+  depends_on = [ local_file.index]
+}
+
+
+resource "aws_s3_bucket_object" "index" {
+  bucket = local.website_bucket_name
+  key    = "index.html"
+  source = "${path.module}/api-tester/main.html"
+    content_type = "text/html"
+
+ depends_on = [
+   aws_s3_bucket.website
+  ]
+}
+
+
 
 #  lambda function to call api periodically for generationg logs
 

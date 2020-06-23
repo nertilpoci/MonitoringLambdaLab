@@ -168,6 +168,7 @@
             outline: 1px solid #ccc;
             padding: 5px;
             margin: 5px;
+            background: white;
         }
 
         .string {
@@ -192,7 +193,10 @@
     </style>
 </head>
 <script type="text/javascript">
-    let url = "https://sqsrpx9m46.execute-api.us-west-2.amazonaws.com/lab/awslab";
+    var autoGenerateInterval = null;
+
+    // let url = "https://sqsrpx9m46.execute-api.us-west-2.amazonaws.com/lab/awslab"
+    let url = "{api_url}";
     let config = {
 
     }
@@ -219,6 +223,11 @@
         document.getElementById('output').innerHTML = ''
         document.getElementById('output').appendChild(document.createElement('pre')).innerHTML = syntaxHighlight(JSON.stringify(data, undefined, 4));;
     }
+    function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
     window.onload = function () {
         document.getElementById('get-by-id').addEventListener("click", function () {
             var id = document.getElementById('getbyid-id').value
@@ -243,12 +252,31 @@
             e.preventDefault();
             var id = document.getElementById('item-id').value;
             var name = document.getElementById('item-name').value;
-            axios.post(`${url}`, { "id": "id", "name": "name" }).then(result => {
+            axios.post(`${url}`, { "id": id, "name": name }).then(result => {
                 setOutput(result.data)
             }).catch(err => {
                 setOutput(err)
             })
         });
+        var autogenenrateButton=document.getElementById('autogenerate-data')
+        autogenenrateButton.addEventListener("click", function (e) {
+            if(autoGenerateInterval){
+                autogenenrateButton.innerHTML="Start autogenerating data"
+                clearInterval(autoGenerateInterval)
+            }
+           else{
+            autogenenrateButton.innerHTML="Stop autogenerating data"
+            autoGenerateInterval = setInterval(()=>{
+                axios.post(`${url}`, { "id": getRandomInt(1,9999999999).toString(), "name": Math.random().toString(36).substring(7) }).then(result => {
+                setOutput(result.data)
+            }).catch(err => {
+                setOutput(err)
+            })
+            },1000)
+           }
+           
+        });
+        
     }
 </script>
 
@@ -269,45 +297,48 @@
                 <div class="inner cover">
                     <div class="row">
                         <div class="col-6">
-                            <label>GET</label> 
+                            <label>GET</label>
                             <div class="input-group mb-3">
-                            <input id="getbyid-id" type="text" class="form-control" placeholder="Enter Id"
-                                aria-describedby="basic-addon2">
-                            <div class="input-group-append">
-                                <button id="get-by-id" class="btn btn-outline-secondary"
-                                    type="button">GET</button>
-                                <button id="get-all" class="btn btn-outline-secondary" type="button">GET
-                                    ALL</button>
+                                <input id="getbyid-id" type="text" class="form-control" placeholder="Enter Id"
+                                    aria-describedby="basic-addon2">
+                                <div class="input-group-append">
+                                    <button id="get-by-id" class="btn btn-outline-secondary" type="button">GET</button>
+                                    <button id="get-all" class="btn btn-outline-secondary" type="button">GET
+                                        ALL</button>
+                                </div>
+                            </div>
+                            <hr>
+                            <label>Create</label>
+                                
+                            </button>
+                            <form style="text-align: left;" id="add-update">
+                                <div class="form-group">
+                                    <label for="item-id">Id</label>
+                                    <input type="text" class="form-control" id="item-id">
+                                </div>
+                                <div class="form-group">
+                                    <label for="item-name">Name</label>
+                                    <input type="text" class="form-control" id="item-name">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                                <button type="button" id="autogenerate-data" class="btn btn-primary">Start Auto Data Generation
+
+                            </form>
+                        </div>
+                        <div class="col-6">
+                            <label>Output</label>
+                            <div style="max-height:70vh;overflow:auto" id="output" style="background-color: white;">
+
                             </div>
                         </div>
-                        <hr>
-                        <label>Create</label>
-                        <form style="text-align: left;" id="add-update">
-                            <div class="form-group">
-                                <label for="item-id">Id</label>
-                                <input type="text" class="form-control" id="item-id">
-                            </div>
-                            <div class="form-group">
-                                <label for="item-name">Name</label>
-                                <input type="text" class="form-control" id="item-name">
-                            </div>
-                            <button type="submit" class="btn btn-primary">Submit</button>
-                        </form>
+
                     </div>
-                    <div class="col-6">
-                        <label>Output</label>
-                        <div id="output" style="background-color: white;">
-    
-                        </div>
-                    </div>
-              
+
                 </div>
-               
+
             </div>
 
         </div>
-
-    </div>
 
     </div>
 </body>
