@@ -39,3 +39,15 @@ Resources:
         Variables:
           TABLE_NAME:
             Ref: SampleTable
+  apiTriggerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: apiTriggerFunction
+      Handler: src/handlers/api-trigger.triggerHandler
+      Runtime: nodejs10.x
+      MemorySize: 128
+      Timeout: 60
+      Environment:
+        Variables:
+          API_URL:
+            Ref: ApiUrl

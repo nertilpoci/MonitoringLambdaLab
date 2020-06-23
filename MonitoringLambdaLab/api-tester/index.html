@@ -1,6 +1,10 @@
+
+<!-- * @author     Nertil Poci -->
 <html>
 
 <head>
+    <title>Lambda application tester</title>
+    
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
@@ -265,7 +269,7 @@ function getUrl(){
             e.preventDefault();
             var id = document.getElementById('item-id').value;
             var name = document.getElementById('item-name').value;
-            axios.post(`${getUrl()}`, { "id": id, "name": name },{headers:{"Content-Type":"application/json"}}).then(result => {
+            axios.post(`${getUrl()}`, { "id": parseInt(id), "name": name },{headers:{"Content-Type":"application/json"}}).then(result => {
                 setOutput(result.data)
             }).catch(err => {
                 setOutput(err)
@@ -274,23 +278,27 @@ function getUrl(){
         var autogenenrateButton=document.getElementById('autogenerate-data')
         autogenenrateButton.addEventListener("click", function (e) {
             if(autoGenerateInterval){
-                autogenenrateButton.innerHTML="Start autogenerating data"
+                autogenenrateButton.innerHTML="Auto Generate Timmer (Success & Failed Results)"
                 clearInterval(autoGenerateInterval)
                 autoGenerateInterval=null
             }
            else{
             autogenenrateButton.innerHTML="Stop autogenerating data"
+            var count=0
             autoGenerateInterval = setInterval(()=>{
-                axios.post(`${getUrl()}`, { "id": getRandomInt(1,9999999999).toString(), "name": Math.random().toString(36).substring(7) }).then(result => {
+                generateData((count % 2)>0)
+                count=count+1
+            },3000)
+           }
+           
+        });
+        function generateData(fail=false){
+            axios.post(`${getUrl()}`, { "id": fail?getRandomInt(1,9999999999).toString():getRandomInt(1,9999999999), "name": Math.random().toString(36).substring(7) }).then(result => {
                 setOutput(result.data)
             }).catch(err => {
                 setOutput(err)
             })
-            },1000)
-           }
-           
-        });
-        
+        }
     }
 </script>
 
@@ -309,7 +317,7 @@ function getUrl(){
                 </div>
 
                 <div class="inner cover">
-                    <label>API URL: <span id="api-url-display"></span></label>
+                    <label>API URL: <span id="api-url-display"><span class="text-danger">Please specify and api url first</span>    </span></label>
                             <div class="input-group mb-3">
                                 <input id="api-url-input" type="text" class="form-control" placeholder="Enter URL"
                                     aria-describedby="basic-addon2">
@@ -347,14 +355,15 @@ function getUrl(){
                                     <label for="item-name">Name</label>
                                     <input type="text" class="form-control" id="item-name">
                                 </div>
-                                <button type="submit" class="btn btn-primary">Submit</button>
-                                <button type="button" id="autogenerate-data" class="btn btn-primary">Start Auto Data Generation
+                                <button type="submit" class="btn btn-primary">Create Entry</button>
+                                <hr>
+                                <button type="button" id="autogenerate-data" class="btn btn-primary">Auto Generate Timmer (Success & Failed Results)
 
                             </form>
                         </div>
                         <div class="col-6">
                             <label>Output</label>
-                            <div style="max-height:70vh;overflow:auto" id="output" style="background-color: white;">
+                            <div style="height:300px;overflow:auto" id="output" style="background-color: white;">
 
                             </div>
                         </div>

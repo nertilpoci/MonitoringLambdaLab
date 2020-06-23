@@ -128,7 +128,7 @@ resource "aws_lambda_function" "getallitemsfunction" {
  
   attribute {
     name = "id"
-    type = "S"
+    type = "N"
   }
   attribute {
     name = "name"
@@ -389,43 +389,65 @@ resource "aws_s3_bucket_object" "index" {
 
 #  lambda function to call api periodically for generationg logs
 
-#  resource "aws_lambda_function" "apitrigger" {
-#    function_name = "apitrigger-${local.functionrandomextension}"
-#    s3_bucket = local.bucket_name
-#    s3_key    = local.lambda_content
-#    handler = "src/handlers/api-trigger.apiTriggerHandler"
-#    runtime = "nodejs10.x"
+ resource "aws_lambda_function" "apitrigger" {
+   function_name = "apitrigger-${local.functionrandomextension}"
+   s3_bucket = local.bucket_name
+   s3_key    = local.lambda_content
+   handler = "src/handlers/api-trigger.triggerHandler"
+   runtime = "nodejs10.x"
 
-#    role = aws_iam_role.lambda_exec.arn
-#    depends_on = [
-#    "aws_s3_bucket_object.object"
-#   ]
-#    environment {
-#     variables = {
-#       API_ENDPOINT = "${aws_api_gateway_deployment.lab.invoke_url}"
-#     }
-#   }
-#  }
+   role = aws_iam_role.lambda_exec.arn
+   depends_on = [
+   "aws_s3_bucket_object.object",
+   "aws_api_gateway_deployment.lab"
+  ]
+   environment {
+    variables = {
+      API_URL = "${aws_api_gateway_deployment.lab.invoke_url}"
+    }
+  }
+ }
 
-# resource "aws_cloudwatch_event_rule" "every_one_minute" {
-#   name                = "every-one-minute"
-#   description         = "Fires every one minutes"
-#   schedule_expression = "rate(1 minute)"
-# }
+resource "aws_cloudwatch_event_rule" "every_one_minute" {
+  name                = "every-one-minute"
+  description         = "Fires every one minutes"
+  schedule_expression = "rate(1 minute)"
+}
 
-# resource "aws_cloudwatch_event_target" "check_foo_every_one_minute" {
-#   rule      = "${aws_cloudwatch_event_rule.every_one_minute.name}"
-#   target_id = "lambda"
-#   arn       = "${aws_lambda_function.apitrigger.arn}"
-# }
+resource "aws_cloudwatch_event_target" "check_foo_every_one_minute" {
+  rule      = "${aws_cloudwatch_event_rule.every_one_minute.name}"
+  target_id = "lambda"
+  arn       = "${aws_lambda_function.apitrigger.arn}"
+}
+resource "aws_sns_topic" "trigger" {
+  name = "api-trigger"
+}
 
-# resource "aws_lambda_permission" "allow_cloudwatch_to_call_check_foo" {
-#   statement_id  = "AllowExecutionFromCloudWatch"
-#   action        = "lambda:InvokeFunction"
-#   function_name = "${aws_lambda_function.apitrigger.function_name}"
-#   principal     = "events.amazonaws.com"
-#   source_arn    = "${aws_cloudwatch_event_rule.every_one_minute.arn}"
-# }
+resource "aws_sns_topic_policy" "default" {
+  arn    = "${aws_sns_topic.trigger.arn}"
+  policy = "${data.aws_iam_policy_document.sns_topic_policy.json}"
+}
+
+data "aws_iam_policy_document" "sns_topic_policy" {
+  statement {
+    effect  = "Allow"
+    actions = ["SNS:Publish"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["events.amazonaws.com"]
+    }
+
+    resources = ["${aws_sns_topic.trigger.arn}"]
+  }
+}
+resource "aws_lambda_permission" "allow_cloudwatch_to_call_check_foo" {
+  statement_id  = "AllowExecutionFromCloudWatch"
+  action        = "lambda:InvokeFunction"
+  function_name = "${aws_lambda_function.apitrigger.function_name}"
+  principal     = "events.amazonaws.com"
+  source_arn    = "${aws_cloudwatch_event_rule.every_one_minute.arn}"
+}
  output "bucket_name" {
   value = local.bucket_name
 }
