@@ -17,8 +17,6 @@ locals {
  provider "aws" {
   version = "~> 2.0"
   region  = "us-west-2"
-  access_key = "AKIA25FATGPMMYAM3K6M"
-  secret_key = "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"
 }
 
 //create s3 bucket
@@ -336,11 +334,6 @@ resource "aws_api_gateway_deployment" "lab" {
 
 #change api url in index.html
 
-resource "local_file" "index" {
-    content     = "${replace(file("${path.module}/api-tester/index.html"), "{api_url}", "${aws_api_gateway_deployment.lab.invoke_url}")}"
-    filename = "${path.module}/api-tester/main.html"
-    depends_on = [ "aws_api_gateway_deployment.lab"]
-}
 
 
 data "aws_iam_policy_document" "bucket_policy" {
@@ -379,7 +372,7 @@ resource "aws_s3_bucket" "website" {
 resource "aws_s3_bucket_object" "index" {
   bucket = local.website_bucket_name
   key    = "index.html"
-  source = "${path.module}/api-tester/main.html"
+  source = "${path.module}/api-tester/index.html"
     content_type = "text/html"
 
  depends_on = [
