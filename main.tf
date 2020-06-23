@@ -17,8 +17,8 @@ locals {
  provider "aws" {
   version = "~> 2.0"
   region  = "us-west-2"
-access_key = "AKIA27GIHZ2UPIJ6ZB5U"
-  secret_key = "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"
+  access_key = "AKIA25FATGPMMYAM3K6M"
+  secret_key = "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"
 }
 
 //create s3 bucket
@@ -258,7 +258,16 @@ resource "aws_api_gateway_method" "getallmethod" {
   http_method   = "GET"
   authorization = "NONE"
 }
-
+resource "aws_api_gateway_method_response" "getallmethod_method_response_200" {
+    rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
+    resource_id   = "${aws_api_gateway_resource.mainapiresource.id}"
+    http_method   = "${aws_api_gateway_method.getallmethod.http_method}"
+    status_code   = "200"
+    response_parameters = {
+        "method.response.header.Access-Control-Allow-Origin" = true
+    }
+    depends_on = ["aws_api_gateway_method.getallmethod"]
+}
 //getallitems integration
 resource "aws_api_gateway_integration" "getallitemsintegration" {
   rest_api_id             = "${aws_api_gateway_rest_api.api.id}"

@@ -17,6 +17,8 @@ locals {
  provider "aws" {
   version = "~> 2.0"
   region  = "us-west-2"
+  access_key = "AKIA25FATGPMMYAM3K6M"
+  secret_key = "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"
 }
 
 //create s3 bucket
@@ -240,12 +242,48 @@ resource "aws_api_gateway_resource" "mainapiresource" {
   parent_id   = "${aws_api_gateway_rest_api.api.root_resource_id}"
   rest_api_id = "${aws_api_gateway_rest_api.api.id}"
 }
-module "cors" {
-  source = "squidfunk/api-gateway-enable-cors/aws"
-  version = "0.3.1"
 
-  api_id          = "${aws_api_gateway_rest_api.api.id}"
-  api_resource_id = "${aws_api_gateway_resource.mainapiresource.id}"
+//options
+
+resource "aws_api_gateway_method" "options_method" {
+    rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
+    resource_id   = "${aws_api_gateway_resource.mainapiresource.id}"
+    http_method   = "OPTIONS"
+    authorization = "NONE"
+}
+resource "aws_api_gateway_method_response" "options_200" {
+    rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
+    resource_id   = "${aws_api_gateway_resource.mainapiresource.id}"
+    http_method   = "${aws_api_gateway_method.options_method.http_method}"
+    status_code   = "200"
+    response_models ={
+        "application/json" = "Empty"
+    }
+    response_parameters ={
+        "method.response.header.Access-Control-Allow-Headers" = true,
+        "method.response.header.Access-Control-Allow-Methods" = true,
+        "method.response.header.Access-Control-Allow-Origin" = true
+    }
+    depends_on = ["aws_api_gateway_method.options_method"]
+}
+resource "aws_api_gateway_integration" "options_integration" {
+    rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
+    resource_id   = "${aws_api_gateway_resource.mainapiresource.id}"
+    http_method   = "${aws_api_gateway_method.options_method.http_method}"
+    type          = "MOCK"
+    depends_on = ["aws_api_gateway_method.options_method"]
+}
+resource "aws_api_gateway_integration_response" "options_integration_response" {
+    rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
+    resource_id   = "${aws_api_gateway_resource.mainapiresource.id}"
+    http_method   = "${aws_api_gateway_method.options_method.http_method}"
+    status_code   = "${aws_api_gateway_method_response.options_200.status_code}"
+    response_parameters = {
+        "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+        "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST,PUT'",
+        "method.response.header.Access-Control-Allow-Origin" = "'*'"
+    }
+    depends_on = ["aws_api_gateway_method_response.options_200"]
 }
 
 //get all items
@@ -274,7 +312,20 @@ resource "aws_api_gateway_method" "putitemmethod" {
   http_method   = "POST"
   authorization = "NONE"
 }
-//getitembyid integration
+resource "aws_api_gateway_method_response" "post_method_response_200" {
+    rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
+    resource_id   = "${aws_api_gateway_resource.mainapiresource.id}"
+    http_method   = "${aws_api_gateway_method.putitemmethod.http_method}"
+    status_code   = "200"
+    response_parameters = {
+         "method.response.header.Access-Control-Allow-Headers" = true,
+        "method.response.header.Access-Control-Allow-Methods" = true,
+        "method.response.header.Access-Control-Allow-Origin" = true
+    }
+    depends_on = ["aws_api_gateway_method.putitemmethod"]
+}
+
+//put item integration integration
 resource "aws_api_gateway_integration" "putitemintegration" {
   rest_api_id             = "${aws_api_gateway_rest_api.api.id}"
   resource_id             = "${aws_api_gateway_resource.mainapiresource.id}"
@@ -284,6 +335,21 @@ resource "aws_api_gateway_integration" "putitemintegration" {
   uri                     = "${aws_lambda_function.putitemfunction.invoke_arn}"
 }
 
+resource "aws_api_gateway_integration_response" "app_api_gateway_integration_response" {
+  rest_api_id = "${aws_api_gateway_rest_api.api.id}"
+  resource_id = "${aws_api_gateway_resource.mainapiresource.id}"
+  http_method = "${aws_api_gateway_method.putitemmethod.http_method}"
+  status_code = 200
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'*'",
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Requested-With'",
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST,PUT'"
+  }
+  depends_on = [
+    "aws_api_gateway_integration.putitemintegration",
+    "aws_api_gateway_method_response.post_method_response_200",
+  ]
+}
 
 
 //get item by id
@@ -308,6 +374,8 @@ resource "aws_api_gateway_integration" "getbyideintegration" {
   type                    = "AWS_PROXY"
   uri                     = "${aws_lambda_function.getbyidfunction.invoke_arn}"
 }
+
+
 #Deploy api
 resource "aws_api_gateway_deployment" "lab" {
    depends_on = [

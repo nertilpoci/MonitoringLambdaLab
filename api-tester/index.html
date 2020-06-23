@@ -195,8 +195,8 @@
 <script type="text/javascript">
     var autoGenerateInterval = null;
 
-    // let url = "https://sqsrpx9m46.execute-api.us-west-2.amazonaws.com/lab/awslab"
-    let url = "{api_url}";
+    let url = "https://83xuod49w3.execute-api.us-west-2.amazonaws.com/lab/awslab"
+    // let url = "{api_url}";
     let config = {
 
     }
@@ -252,7 +252,7 @@
             e.preventDefault();
             var id = document.getElementById('item-id').value;
             var name = document.getElementById('item-name').value;
-            axios.post(`${url}`, { "id": id, "name": name }).then(result => {
+            axios.post(`${url}`, { "id": id, "name": name },{headers:{"Content-Type":"application/json"}}).then(result => {
                 setOutput(result.data)
             }).catch(err => {
                 setOutput(err)
@@ -263,6 +263,7 @@
             if(autoGenerateInterval){
                 autogenenrateButton.innerHTML="Start autogenerating data"
                 clearInterval(autoGenerateInterval)
+                autoGenerateInterval=null
             }
            else{
             autogenenrateButton.innerHTML="Stop autogenerating data"
@@ -289,7 +290,7 @@
 
                 <div class="masthead clearfix">
                     <div class="container inner">
-                        <h3 class="masthead-brand">Pluralsight Lab API TESTER</h3>
+                        <h3 class="masthead-brand">Monitoring Lambda Applications</h3>
 
                     </div>
                 </div>
